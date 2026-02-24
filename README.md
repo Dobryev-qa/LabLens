@@ -2,6 +2,24 @@
 
 AI-powered iOS app for scanning lab reports (PDF/photo), extracting biomarkers, generating a health summary, and producing supplement recommendations.
 
+## Application Preview
+
+<p align="left">
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/disclaimer.png" width="180"/>
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/aboutyou.png" width="180"/>
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/scan.png" width="180"/>
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/ai.png" width="180"/>
+</p>
+
+<p align="left">
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/result.png" width="180"/>
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/biomarket.png" width="180"/>
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/history.png" width="180"/>
+  <img src="https://github.com/Dobryev-qa/BrainFlow/blob/main/App_preview/profile.png" width="180"/>
+</p>
+
+---
+
 ## Features
 
 - PDF and photo lab report scanning

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AI_IMAGE_COMPRESSION_QUALITY</key>
+	<real>0.37999999523162842</real>
+	<key>AI_IMAGE_MAX_DIMENSION</key>
+	<integer>900</integer>
+	<key>CFBundleDisplayName</key>
+	<string>LabLens</string>
+	<key>API_AUTH_TOKEN</key>
+	<string>$(API_AUTH_TOKEN)</string>
+	<key>API_BASE_URL</key>
+	<string>$(API_BASE_URL)</string>
+</dict>
+</plist>

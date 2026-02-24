@@ -1,0 +1,25 @@
+.DS_Store
+
+# Xcode / build artifacts
+.DerivedData/
+DerivedData/
+build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+xcuserdata/
+
+# SwiftPM
+.build/
+
+# Local logs / temp
+*.log
+tmp/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.env.*
+

@@ -1,0 +1,21 @@
+services:
+  vibecheck-mock-backend:
+    image: python:3.12-slim
+    working_dir: /app
+    command: ["python", "/app/mock_backend.py"]
+    environment:
+      BACKEND_HOST: 0.0.0.0
+      BACKEND_PORT: 8080
+      API_REQUIRE_AUTH: "true"
+      API_AUTH_TOKEN: dev-token
+      # Optional: enable OpenRouter vision-model analysis (images are sent directly; OCR text is optional context)
+      OPENROUTER_API_KEY: ""
+      OPENROUTER_PRIMARY_MODEL: "nvidia/nemotron-nano-12b-v2-vl:free"
+      OPENROUTER_FALLBACK_MODEL: "qwen/qwen3-vl-30b-a3b-thinking"
+      OPENROUTER_FALLBACK_MODEL_2: "qwen/qwen3-vl-235b-a22b-thinking"
+      OPENROUTER_FALLBACK_MODEL_3: ""
+      OPENROUTER_MAX_TOKENS: "1200"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app:ro

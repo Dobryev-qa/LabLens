@@ -1,0 +1,15 @@
+//
+//  Config.xcconfig
+//  VibeCheck
+//
+//  Created by Dmitrii on 17.02.2026.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
+API_BASE_URL = http://127.0.0.1:8080
+API_AUTH_TOKEN = dev-token
+
+// AI feature flags
+AI_IMAGE_COMPRESSION_QUALITY = 0.38
+AI_IMAGE_MAX_DIMENSION = 900

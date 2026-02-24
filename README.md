@@ -1,60 +1,73 @@
-# VibeCheck
+# LabLens
 
-## Runtime feature flags
+AI-powered iOS app for scanning lab reports (PDF/photo), extracting biomarkers, generating a health summary, and producing supplement recommendations.
 
-The app reads these flags from `Info.plist` (with defaults from code if missing):
+## Features
 
-- `API_BASE_URL`: backend base URL used by iOS client (`POST /v1/analyze-report`).
-- `API_AUTH_TOKEN`: optional backend bearer token for app-to-backend authorization.
-- `AI_IMAGE_COMPRESSION_QUALITY`: JPEG quality for upload payload (range clamped to 0.2...0.95).
-- `AI_IMAGE_MAX_DIMENSION`: maximum image side before upload resize (minimum 300).
+- PDF and photo lab report scanning
+- On-device OCR (Apple Vision)
+- Hybrid AI analysis (OCR + vision)
+- Biomarker extraction into structured results
+- AI-generated summary and supplement recommendations
+- Local scan history with detail view
+- Profile-based personalization (gender / age / weight)
+- Debug export of rendered PDF pages and stitched images
 
-Current defaults in code are defined in:
-`/Users/WorkShop/QA/Xcode/VibeCheck/VibeCheck/FeatureFlags.swift`
+## Stack
 
-## Privacy and consent
+- iOS: SwiftUI + SwiftData
+- OCR: Apple Vision
+- PDF rendering: PDFKit
+- Backend: Python (`backend/mock_backend.py`)
+- AI provider: OpenRouter (vision + text fallback chain)
 
-- Profile data (gender, birth date, optional weight) is stored in Keychain.
-- Consent is versioned and timestamped in local defaults.
-- Consent is required before scan upload.
-- Users can delete all local health data from Profile.
+## Runtime Feature Flags (iOS)
 
-## Local mock backend
+The app reads these values from `Info.plist` / build config:
 
-Backend mock files:
-- `/Users/WorkShop/QA/Xcode/VibeCheck/backend/mock_backend.py`
-- `/Users/WorkShop/QA/Xcode/VibeCheck/backend/docker-compose.yml`
+- `API_BASE_URL` — backend base URL (`POST /v1/analyze-report`)
+- `API_AUTH_TOKEN` — bearer token for app -> backend auth
+- `AI_IMAGE_COMPRESSION_QUALITY` — JPEG compression for uploads
+- `AI_IMAGE_MAX_DIMENSION` — image resize cap before upload
 
-Run with Python:
+Defaults are configured in:
 
-```bash
-API_AUTH_TOKEN=dev-token BACKEND_PORT=8080 python3 /Users/WorkShop/QA/Xcode/VibeCheck/backend/mock_backend.py
-```
+- `Config.xcconfig`
+- `VibeCheck/FeatureFlags.swift`
 
-Optional OpenRouter vision LLM mode (fallback chain):
+## Privacy and Consent
 
-- Primary: `nvidia/nemotron-nano-12b-v2-vl:free`
-- Fallback 1: `qwen/qwen3-vl-30b-a3b-thinking`
-- Fallback 2: `qwen/qwen3-vl-235b-a22b-thinking`
-- Fallback 3: disabled by default (free `Gemma 3 27B` is often rate-limited upstream)
-- Images are sent directly to OpenRouter vision models. OCR text in `reportText` / `ocrText` is optional and improves extraction quality on low-quality scans.
+- Profile data (gender, birth date, optional weight) is stored locally (Keychain-backed store)
+- Consent is versioned and timestamped locally
+- Consent is required before uploads
+- Users can delete all local health data from Profile
+
+## Local Development
+
+### 1. Start backend
+
+Run from project root:
 
 ```bash
 API_AUTH_TOKEN=dev-token \
-OPENROUTER_API_KEY=your_openrouter_key \
-OPENROUTER_PRIMARY_MODEL=nvidia/nemotron-nano-12b-v2-vl:free \
-OPENROUTER_FALLBACK_MODEL=qwen/qwen3-vl-30b-a3b-thinking \
-OPENROUTER_FALLBACK_MODEL_2=qwen/qwen3-vl-235b-a22b-thinking \
-OPENROUTER_FALLBACK_MODEL_3='' \
-OPENROUTER_MAX_TOKENS=1200 \
-python3 /Users/WorkShop/QA/Xcode/VibeCheck/backend/mock_backend.py
+OPENROUTER_API_KEY=YOUR_OPENROUTER_KEY \
+AI_PROVIDER=openrouter \
+AI_VISUAL_ONLY_MODE=false \
+AI_OCR_ONLY_MODE=false \
+OPENROUTER_PRIMARY_MODEL='nvidia/nemotron-nano-12b-v2-vl:free' \
+OPENROUTER_FALLBACK_MODEL='qwen/qwen3-vl-30b-a3b-thinking' \
+OPENROUTER_FALLBACK_MODEL_2='qwen/qwen3-vl-235b-a22b-thinking' \
+OPENROUTER_FALLBACK_MODEL_3='google/gemma-3-27b-it:free' \
+python3 backend/mock_backend.py
 ```
 
-Run with Docker:
+Alternative (from backend directory):
 
 ```bash
-cd /Users/WorkShop/QA/Xcode/VibeCheck/backend
-docker compose up
+cd backend
+API_AUTH_TOKEN=dev-token \
+OPENROUTER_API_KEY=YOUR_OPENROUTER_KEY \
+python3 mock_backend.py
 ```
 
 Health check:
@@ -63,10 +76,62 @@ Health check:
 curl http://127.0.0.1:8080/health
 ```
 
-Auth checks:
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+### 2. Run iOS app
+
+- Open `VibeCheck.xcodeproj` in Xcode
+- Run the `VibeCheck` scheme
+- App display name on device/simulator is `LabLens`
+
+## Backend Model Chain (OpenRouter)
+
+Current recommended chain:
+
+1. `nvidia/nemotron-nano-12b-v2-vl:free`
+2. `qwen/qwen3-vl-30b-a3b-thinking`
+3. `qwen/qwen3-vl-235b-a22b-thinking`
+4. `google/gemma-3-27b-it:free` (text-oriented fallback using OCR context)
+
+## Scan Pipeline (Current)
+
+1. User imports PDF or photo
+2. PDF pages render to images
+3. Pages are stitched into ordered overlapping groups (to preserve cross-page context)
+4. OCR runs on-device (Apple Vision)
+5. App sends:
+   - stitched images
+   - `reportText`
+   - `reportTextByPage`
+   - `stitchedPageGroups`
+6. Backend runs hybrid extraction (vision + OCR)
+7. Backend may run:
+   - completeness retry
+   - reconciliation pass (dedupe / missed rows / corrections)
+   - final summary + recommendation synthesis pass
+8. App renders `Summary`, `Recommendations`, `Biomarkers`
+
+## Debug Output (PDF Rendering / Stitching)
+
+The app can export debug images in the app container:
+
+- `Documents/PDFRenderDebug/...` — raw rendered PDF pages
+- `Documents/PDFStitchedDebug/...` — stitched image groups sent to AI
+
+Useful for verifying:
+
+- page order
+- stitch grouping
+- content loss during render/stitch
+
+## API Quick Checks
 
 ```bash
-# 401 (no token)
+# 401 (missing token)
 curl -i -X POST http://127.0.0.1:8080/v1/analyze-report \
   -H 'Content-Type: application/json' \
   -d '{"images":["abc"]}'
@@ -77,15 +142,33 @@ curl -i -X POST http://127.0.0.1:8080/v1/analyze-report \
   -H 'Authorization: Bearer wrong-token' \
   -d '{"images":["abc"]}'
 
-# 200 (valid token)
-curl -i -X POST http://127.0.0.1:8080/v1/analyze-report \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer dev-token' \
-  -d '{"images":["abc"],"profile":{"gender":"woman","ageBand":"30-39"}}'
-
-# 200 via OpenRouter vision models (requires OPENROUTER_API_KEY; OCR text optional but recommended)
+# Valid request (requires backend + OpenRouter key configured)
 curl -i -X POST http://127.0.0.1:8080/v1/analyze-report \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer dev-token' \
   -d '{"images":["abc"],"reportText":"CBC: Hemoglobin 13.8 g/dL; Vitamin D 22 ng/mL","profile":{"gender":"woman","ageBand":"30-39"}}'
 ```
+
+## Known Limitations
+
+- Free vision endpoints can be slow / unstable (timeouts, invalid JSON, incomplete extraction)
+- Local development requires backend to be running
+- Large PDFs increase latency significantly
+
+## Recommended Production Direction
+
+- Always use hybrid mode (OCR + vision)
+- Enable second pass only when needed (low completeness / long reports / many unknowns)
+- Enforce page limit (e.g. 8 pages)
+- Track extraction metrics (`raw_count`, `deduped_count`, `reconciled_count`, `unknown_count`)
+
+## Security
+
+- Do not commit API keys
+- Use environment variables for secrets
+- Rotate keys if exposed
+
+## Disclaimer
+
+This app does not provide medical diagnosis or treatment. Results and recommendations are informational only and should be reviewed with a licensed healthcare professional.
+
